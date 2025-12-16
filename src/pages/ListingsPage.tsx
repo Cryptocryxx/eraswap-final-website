@@ -5,7 +5,7 @@ import { toast } from "sonner@2.0.3";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "../contexts/RouterContext";
 import { motion, AnimatePresence } from "motion/react";
-import { Store, ArrowLeft, Loader2, X, ChevronLeft, ChevronRight, Plus, Upload } from "lucide-react";
+import { Store, ArrowLeft, Loader2, X, ChevronLeft, ChevronRight, Plus, Upload, Trash2 } from "lucide-react";
 import { EraCoinPrice } from "../components/EraCoinPrice";
 import eraCoinIcon from "figma:asset/724febc18db287bf1715ab2a9524f2f860196cfb.png";
 
@@ -40,6 +40,8 @@ export function ListingsPage() {
   });
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [pictureFiles, setPictureFiles] = useState<File[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const categories = [
     "Electronics",
@@ -154,6 +156,31 @@ export function ListingsPage() {
       toast.error("An error occurred while adding the listing.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteListing = async (id: number) => {
+    setDeleting(true);
+    try {
+      const response = await fetch(`https://eraswap.online/api/items/${id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        toast.success("Listing deleted successfully!");
+        // Refresh listings
+        const listingsResponse = await fetch(`https://eraswap.online/api/users/listings/${user?.id}`);
+        const listingsData = await listingsResponse.json();
+        setListings(listingsData);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || "Failed to delete listing.");
+      }
+    } catch (error) {
+      console.error("Error deleting listing:", error);
+      toast.error("An error occurred while deleting the listing.");
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -396,6 +423,70 @@ export function ListingsPage() {
                         <p className="text-green-600 dark:text-green-400">
                           This item is available for purchase
                         </p>
+                      )}
+                    </div>
+
+                    {/* Delete Listing Section */}
+                    <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+                      {!showDeleteConfirm ? (
+                        <motion.button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteConfirm(true);
+                          }}
+                          className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                          Delete Listing
+                        </motion.button>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded-lg p-4">
+                            <p className="text-sm text-red-700 dark:text-red-300">
+                              ⚠️ Are you sure you want to delete this listing? This action cannot be undone.
+                            </p>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <motion.button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowDeleteConfirm(false);
+                              }}
+                              className="flex-1 bg-gray-100 dark:bg-gray-800 text-foreground py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Cancel
+                            </motion.button>
+
+                            <motion.button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteListing(selectedItem.id);
+                                setSelectedItem(null);
+                              }}
+                              disabled={deleting}
+                              className="flex-1 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              whileHover={{ scale: deleting ? 1 : 1.02 }}
+                              whileTap={{ scale: deleting ? 1 : 0.98 }}
+                            >
+                              {deleting ? (
+                                <>
+                                  <Loader2 className="w-5 h-5 animate-spin" />
+                                  Deleting...
+                                </>
+                              ) : (
+                                <>
+                                  <Trash2 className="w-5 h-5" />
+                                  Confirm Delete
+                                </>
+                              )}
+                            </motion.button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>

@@ -5,7 +5,7 @@ import { toast } from "sonner@2.0.3";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "../contexts/RouterContext";
 import { motion } from "motion/react";
-import { User, ArrowLeft, Loader2, Save, Lock, X, Coins, ShoppingCart } from "lucide-react";
+import { User, ArrowLeft, Loader2, Save, Lock, X, Coins, ShoppingCart, Trash2 } from "lucide-react";
 import eraCoinIcon from "figma:asset/724febc18db287bf1715ab2a9524f2f860196cfb.png";
 
 interface UserProfile {
@@ -34,6 +34,8 @@ export function ProfilePage() {
   const [eraCoins, setEraCoins] = useState<number>(0);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -115,6 +117,29 @@ export function ProfilePage() {
       toast.error("An error occurred while updating profile");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const response = await fetch(`https://eraswap.online/api/users/${user?.id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        toast.success("Account deleted successfully!");
+        navigate("home");
+      } else {
+        toast.error("Failed to delete account");
+      }
+    } catch (error) {
+      toast.error("An error occurred while deleting account");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -523,6 +548,76 @@ export function ProfilePage() {
                 EraCoins can be used to purchase furniture on the EraSwap marketplace
               </p>
             </div>
+          </motion.div>
+        )}
+
+        {/* Delete Account Section */}
+        {!loading && (
+          <motion.div
+            className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 mt-6 border-2 border-red-200 dark:border-red-900"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Trash2 className="w-5 h-5 text-red-500" />
+              <h2 className="text-xl text-red-500">Danger Zone</h2>
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-6">
+              Once you delete your account, there is no going back. Please be certain.
+            </p>
+
+            {!showDeleteConfirm ? (
+              <motion.button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Trash2 className="w-5 h-5" />
+                Delete Account
+              </motion.button>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded-lg p-4">
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    ⚠️ This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <motion.button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 bg-gray-100 dark:bg-gray-800 text-foreground py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Cancel
+                  </motion.button>
+
+                  <motion.button
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    className="flex-1 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    whileHover={{ scale: deleting ? 1 : 1.02 }}
+                    whileTap={{ scale: deleting ? 1 : 0.98 }}
+                  >
+                    {deleting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-5 h-5" />
+                        Confirm Delete
+                      </>
+                    )}
+                  </motion.button>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </div>
