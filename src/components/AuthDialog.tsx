@@ -147,7 +147,13 @@ export function AuthDialog({ open, onOpenChange, defaultMode = "login" }: AuthDi
           });
           return;
         }
-    }
+      }
+    } catch (error) {
+        toast.error("Network error while checking username. Please try again.", {
+          icon: <AlertCircle className="w-5 h-5 text-destructive" />,
+        });
+        return;
+      }
 
     setLoading(true);
 
