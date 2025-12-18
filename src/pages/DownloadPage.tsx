@@ -1,9 +1,14 @@
 import { motion } from "motion/react";
 import { Download, Apple, MonitorDown, Check, ArrowLeft } from "lucide-react";
 import { useRouter } from "../contexts/RouterContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useState } from "react";
+import { AuthDialog } from "../components/AuthDialog";
 
 export function DownloadPage() {
   const { navigate } = useRouter();
+  const { isAuthenticated, user } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
 
   const features = [
     "Browse furniture by room categories",
@@ -15,11 +20,17 @@ export function DownloadPage() {
   ];
 
   const handleDownload = (platform: 'mac' | 'windows') => {
+    if (!isAuthenticated || !user) {
+      // Prompt user to log in before allowing download
+      setAuthOpen(true);
+      return;
+    }
+
     const downloadUrls = {
-      mac: 'https://eraswap.online/api/build/mac',
-      windows: 'https://eraswap.online/api/build/windows'
+      mac: `https://eraswap.online/api/build/mac/${user.id}`,
+      windows: `https://eraswap.online/api/build/windows/${user.id}`
     };
-    
+
     window.location.href = downloadUrls[platform];
   };
 
@@ -69,7 +80,7 @@ export function DownloadPage() {
               Join the sustainable furniture revolution
             </p>
             <p className="text-gray-500">
-              Available for macOS and Windows
+              Available for macOS and Windows — you must be logged in to download
             </p>
           </motion.div>
 
@@ -113,6 +124,7 @@ export function DownloadPage() {
                 style={{ backgroundColor: '#61892F' }}
                 whileHover={{ scale: 1.02, backgroundColor: '#86C232' }}
                 whileTap={{ scale: 0.98 }}
+                disabled={!isAuthenticated}
               >
                 <div className="flex items-center justify-center gap-2">
                   <Download className="w-5 h-5" />
@@ -120,9 +132,15 @@ export function DownloadPage() {
                 </div>
               </motion.button>
 
-              <p className="text-xs text-center text-gray-400 mt-4">
-                Version 1.0.0 • Updated December 2024
-              </p>
+              {!isAuthenticated ? (
+                <p className="text-sm text-center text-red-600 mt-4">
+                  Please <button onClick={() => setAuthOpen(true)} className="underline font-medium">log in</button> to download the app.
+                </p>
+              ) : (
+                <p className="text-xs text-center text-gray-400 mt-4">
+                  Version 1.0.0 • Updated December 2024
+                </p>
+              )}
             </motion.div>
 
             {/* Windows Download Card */}
@@ -163,6 +181,7 @@ export function DownloadPage() {
                 style={{ backgroundColor: '#61892F' }}
                 whileHover={{ scale: 1.02, backgroundColor: '#86C232' }}
                 whileTap={{ scale: 0.98 }}
+                disabled={!isAuthenticated}
               >
                 <div className="flex items-center justify-center gap-2">
                   <Download className="w-5 h-5" />
@@ -170,9 +189,15 @@ export function DownloadPage() {
                 </div>
               </motion.button>
 
-              <p className="text-xs text-center text-gray-400 mt-4">
-                Version 1.0.0 • Updated December 2024
-              </p>
+              {!isAuthenticated ? (
+                <p className="text-sm text-center text-red-600 mt-4">
+                  Please <button onClick={() => setAuthOpen(true)} className="underline font-medium">log in</button> to download the app.
+                </p>
+              ) : (
+                <p className="text-xs text-center text-gray-400 mt-4">
+                  Version 1.0.0 • Updated December 2024
+                </p>
+              )}
             </motion.div>
           </div>
 
@@ -214,6 +239,8 @@ export function DownloadPage() {
             <p className="text-sm text-gray-500">
               By downloading EraSwap, you agree to our Terms of Service and Privacy Policy
             </p>
+            {/* Auth dialog for login/register */}
+            <AuthDialog open={authOpen} onOpenChange={setAuthOpen} defaultMode="login" />
           </motion.div>
         </div>
       </div>

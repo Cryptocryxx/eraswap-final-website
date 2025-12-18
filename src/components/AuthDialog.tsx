@@ -141,6 +141,7 @@ export function AuthDialog({ open, onOpenChange, defaultMode = "login" }: AuthDi
       const existingUsersResponse = await fetch(`https://eraswap.online/api/users/check-username/${registerData.username}`);
       if (existingUsersResponse.ok) {
         const existingUserData = await existingUsersResponse.json();
+        console.log("Username check response:", existingUserData);
         if (existingUserData.exists) {
           toast.error("Username is already taken. Please choose another one.", {
             icon: <AlertCircle className="w-5 h-5 text-destructive" />,
